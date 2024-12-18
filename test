@@ -136,3 +136,29 @@ api-client/
 │   │   ├── resources/
 │   │       └── application.properties
 ├── pom.xml
+
+
+package com.example.apiclient;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class MainApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(MainApplication.class, args);
+    }
+}
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+            <configuration>
+                <mainClass>com.example.apiclient.MainApplication</mainClass>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+
