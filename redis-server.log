@@ -1,0 +1,104 @@
+10230:C 19 Jan 2025 19:38:15.672 * Supervised by systemd. Please make sure you set appropriate values for TimeoutStartSec and TimeoutStopSec in your service unit.
+10230:C 19 Jan 2025 19:38:15.672 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+10230:C 19 Jan 2025 19:38:15.673 # Redis version=7.0.15, bits=64, commit=00000000, modified=0, pid=10230, just started
+10230:C 19 Jan 2025 19:38:15.673 # Configuration loaded
+10230:M 19 Jan 2025 19:38:15.673 * monotonic clock: POSIX clock_gettime
+10230:M 19 Jan 2025 19:38:15.673 # Warning: Could not create server TCP listening socket 127.0.0.1:6379: bind: Address already in use
+10230:M 19 Jan 2025 19:38:15.673 # Failed listening on port 6379 (TCP), aborting.
+10242:C 19 Jan 2025 19:38:16.014 * Supervised by systemd. Please make sure you set appropriate values for TimeoutStartSec and TimeoutStopSec in your service unit.
+10242:C 19 Jan 2025 19:38:16.014 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+10242:C 19 Jan 2025 19:38:16.014 # Redis version=7.0.15, bits=64, commit=00000000, modified=0, pid=10242, just started
+10242:C 19 Jan 2025 19:38:16.014 # Configuration loaded
+10242:M 19 Jan 2025 19:38:16.014 * monotonic clock: POSIX clock_gettime
+10242:M 19 Jan 2025 19:38:16.015 # Warning: Could not create server TCP listening socket 127.0.0.1:6379: bind: Address already in use
+10242:M 19 Jan 2025 19:38:16.015 # Failed listening on port 6379 (TCP), aborting.
+10259:C 19 Jan 2025 19:38:16.257 * Supervised by systemd. Please make sure you set appropriate values for TimeoutStartSec and TimeoutStopSec in your service unit.
+10259:C 19 Jan 2025 19:38:16.258 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+10259:C 19 Jan 2025 19:38:16.258 # Redis version=7.0.15, bits=64, commit=00000000, modified=0, pid=10259, just started
+10259:C 19 Jan 2025 19:38:16.258 # Configuration loaded
+10259:M 19 Jan 2025 19:38:16.258 * monotonic clock: POSIX clock_gettime
+10259:M 19 Jan 2025 19:38:16.258 # Warning: Could not create server TCP listening socket 127.0.0.1:6379: bind: Address already in use
+10259:M 19 Jan 2025 19:38:16.258 # Failed listening on port 6379 (TCP), aborting.
+10265:C 19 Jan 2025 19:38:16.501 * Supervised by systemd. Please make sure you set appropriate values for TimeoutStartSec and TimeoutStopSec in your service unit.
+10265:C 19 Jan 2025 19:38:16.501 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+10265:C 19 Jan 2025 19:38:16.501 # Redis version=7.0.15, bits=64, commit=00000000, modified=0, pid=10265, just started
+10265:C 19 Jan 2025 19:38:16.501 # Configuration loaded
+10265:M 19 Jan 2025 19:38:16.501 * monotonic clock: POSIX clock_gettime
+10265:M 19 Jan 2025 19:38:16.502 # Warning: Could not create server TCP listening socket 127.0.0.1:6379: bind: Address already in use
+10265:M 19 Jan 2025 19:38:16.502 # Failed listening on port 6379 (TCP), aborting.
+10270:C 19 Jan 2025 19:38:16.838 * Supervised by systemd. Please make sure you set appropriate values for TimeoutStartSec and TimeoutStopSec in your service unit.
+10270:C 19 Jan 2025 19:38:16.838 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+10270:C 19 Jan 2025 19:38:16.838 # Redis version=7.0.15, bits=64, commit=00000000, modified=0, pid=10270, just started
+10270:C 19 Jan 2025 19:38:16.838 # Configuration loaded
+10270:M 19 Jan 2025 19:38:16.838 * monotonic clock: POSIX clock_gettime
+10270:M 19 Jan 2025 19:38:16.839 # Warning: Could not create server TCP listening socket 127.0.0.1:6379: bind: Address already in use
+10270:M 19 Jan 2025 19:38:16.839 # Failed listening on port 6379 (TCP), aborting.
+1062:C 20 Jan 2025 06:09:51.413 * Supervised by systemd. Please make sure you set appropriate values for TimeoutStartSec and TimeoutStopSec in your service unit.
+1062:C 20 Jan 2025 06:09:51.413 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+1062:C 20 Jan 2025 06:09:51.413 # Redis version=7.0.15, bits=64, commit=00000000, modified=0, pid=1062, just started
+1062:C 20 Jan 2025 06:09:51.413 # Configuration loaded
+1062:M 20 Jan 2025 06:09:51.415 * monotonic clock: POSIX clock_gettime
+1062:M 20 Jan 2025 06:09:51.419 * Running mode=standalone, port=6379.
+1062:M 20 Jan 2025 06:09:51.419 # Server initialized
+1062:M 20 Jan 2025 06:09:51.419 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+1062:M 20 Jan 2025 06:09:51.422 * Ready to accept connections
+1062:signal-handler (1737360430) Received SIGTERM scheduling shutdown...
+1062:M 20 Jan 2025 02:07:10.451 # User requested shutdown...
+1062:M 20 Jan 2025 02:07:10.451 * Saving the final RDB snapshot before exiting.
+1062:M 20 Jan 2025 02:07:10.477 * DB saved on disk
+1062:M 20 Jan 2025 02:07:10.477 * Removing the pid file.
+1062:M 20 Jan 2025 02:07:10.477 # Redis is now ready to exit, bye bye...
+1002:C 20 Jan 2025 18:14:37.212 * Supervised by systemd. Please make sure you set appropriate values for TimeoutStartSec and TimeoutStopSec in your service unit.
+1002:C 20 Jan 2025 18:14:37.212 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+1002:C 20 Jan 2025 18:14:37.212 # Redis version=7.0.15, bits=64, commit=00000000, modified=0, pid=1002, just started
+1002:C 20 Jan 2025 18:14:37.212 # Configuration loaded
+1002:M 20 Jan 2025 18:14:37.213 * monotonic clock: POSIX clock_gettime
+1002:M 20 Jan 2025 18:14:37.216 * Running mode=standalone, port=6379.
+1002:M 20 Jan 2025 18:14:37.216 # Server initialized
+1002:M 20 Jan 2025 18:14:37.216 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+1002:M 20 Jan 2025 18:14:37.217 * Loading RDB produced by version 7.0.15
+1002:M 20 Jan 2025 18:14:37.217 * RDB age 58047 seconds
+1002:M 20 Jan 2025 18:14:37.217 * RDB memory usage when created 0.84 Mb
+1002:M 20 Jan 2025 18:14:37.217 * Done loading RDB, keys loaded: 0, keys expired: 0.
+1002:M 20 Jan 2025 18:14:37.217 * DB loaded from disk: 0.000 seconds
+1002:M 20 Jan 2025 18:14:37.217 * Ready to accept connections
+1002:signal-handler (1737397095) Received SIGTERM scheduling shutdown...
+1002:M 20 Jan 2025 12:18:15.903 # User requested shutdown...
+1002:M 20 Jan 2025 12:18:15.903 * Saving the final RDB snapshot before exiting.
+1002:M 20 Jan 2025 12:18:15.932 * DB saved on disk
+1002:M 20 Jan 2025 12:18:15.932 * Removing the pid file.
+1002:M 20 Jan 2025 12:18:15.937 # Redis is now ready to exit, bye bye...
+1013:C 20 Jan 2025 18:21:10.511 * Supervised by systemd. Please make sure you set appropriate values for TimeoutStartSec and TimeoutStopSec in your service unit.
+1013:C 20 Jan 2025 18:21:10.511 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+1013:C 20 Jan 2025 18:21:10.511 # Redis version=7.0.15, bits=64, commit=00000000, modified=0, pid=1013, just started
+1013:C 20 Jan 2025 18:21:10.511 # Configuration loaded
+1013:M 20 Jan 2025 18:21:10.512 * monotonic clock: POSIX clock_gettime
+1013:M 20 Jan 2025 18:21:10.513 * Running mode=standalone, port=6379.
+1013:M 20 Jan 2025 18:21:10.513 # Server initialized
+1013:M 20 Jan 2025 18:21:10.513 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+1013:M 20 Jan 2025 18:21:10.514 * Loading RDB produced by version 7.0.15
+1013:M 20 Jan 2025 18:21:10.514 * RDB age 21775 seconds
+1013:M 20 Jan 2025 18:21:10.514 * RDB memory usage when created 0.84 Mb
+1013:M 20 Jan 2025 18:21:10.514 * Done loading RDB, keys loaded: 0, keys expired: 0.
+1013:M 20 Jan 2025 18:21:10.514 * DB loaded from disk: 0.000 seconds
+1013:M 20 Jan 2025 18:21:10.515 * Ready to accept connections
+1013:signal-handler (1737437359) Received SIGTERM scheduling shutdown...
+1013:M 20 Jan 2025 23:29:19.193 # User requested shutdown...
+1013:M 20 Jan 2025 23:29:19.194 * Saving the final RDB snapshot before exiting.
+1013:M 20 Jan 2025 23:29:19.215 * DB saved on disk
+1013:M 20 Jan 2025 23:29:19.215 * Removing the pid file.
+1013:M 20 Jan 2025 23:29:19.215 # Redis is now ready to exit, bye bye...
+1023:C 21 Jan 2025 22:59:53.117 * Supervised by systemd. Please make sure you set appropriate values for TimeoutStartSec and TimeoutStopSec in your service unit.
+1023:C 21 Jan 2025 22:59:53.117 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+1023:C 21 Jan 2025 22:59:53.117 # Redis version=7.0.15, bits=64, commit=00000000, modified=0, pid=1023, just started
+1023:C 21 Jan 2025 22:59:53.117 # Configuration loaded
+1023:M 21 Jan 2025 22:59:53.118 * monotonic clock: POSIX clock_gettime
+1023:M 21 Jan 2025 22:59:53.119 * Running mode=standalone, port=6379.
+1023:M 21 Jan 2025 22:59:53.119 # Server initialized
+1023:M 21 Jan 2025 22:59:53.119 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+1023:M 21 Jan 2025 22:59:53.120 * Loading RDB produced by version 7.0.15
+1023:M 21 Jan 2025 22:59:53.120 * RDB age 84634 seconds
+1023:M 21 Jan 2025 22:59:53.120 * RDB memory usage when created 0.84 Mb
+1023:M 21 Jan 2025 22:59:53.120 * Done loading RDB, keys loaded: 0, keys expired: 0.
+1023:M 21 Jan 2025 22:59:53.120 * DB loaded from disk: 0.000 seconds
+1023:M 21 Jan 2025 22:59:53.120 * Ready to accept connections
