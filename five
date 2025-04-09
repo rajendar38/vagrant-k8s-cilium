@@ -4,49 +4,43 @@ def update_yaml_with_namespaces(yaml_file_path, namespaces):
         with open(yaml_file_path, 'r') as file:
             data = yaml.safe_load(file)
 
-        def replace_namespace_in_url(url):
-            if not url.startswith("http://") or "svc.cluster.local" not in url:
-                return url  # skip non-matching URLs
-
-            parts = url.split("http://")[1].split("/")
-            host = parts[0]  # e.g. dsapi-srfeaccess.namespace.svc.cluster.local:8080
-            rest = "/".join(parts[1:])  # the path after the host
-
-            host_parts = host.split(".")
-            if len(host_parts) < 4:
-                return url  # not expected format
-
-            appname = host_parts[0]
-            namespace = host_parts[1]
-
-            if appname in namespaces and namespaces[appname]:
-                new_ns = namespaces[appname][0]
-                port = ''
-                if ':' in host_parts[3]:
-                    port = host_parts[3].split(":")[1]
-                new_host = f"{appname}.{new_ns}.svc.cluster.local"
-                if port:
-                    new_host += f":{port}"
-                new_url = f"http://{new_host}/{rest}"
-                logger.info(f"Updated URL for app '{appname}': {new_url}")
-                return new_url
-
-            return url
-
         def recursive_update(d):
             for key, value in d.items():
                 if isinstance(value, dict):
                     recursive_update(value)
-                elif isinstance(value, str):
-                    new_value = replace_namespace_in_url(value)
-                    if new_value != value:
-                        d[key] = new_value
+                elif isinstance(value, str) and ".svc.cluster.local" in value:
+                    parts = value.split("://")
+                    if len(parts) != 2:
+                        continue
+                    scheme, rest = parts
+                    # Example: rest = 'dsapi-srfeaccess.digital-servicing-{SHIELD_ENV}-01.svc.cluster.local:8080/...'
+                    segments = rest.split('.svc.cluster.local')
+                    if len(segments) < 2:
+                        continue
+
+                    host = segments[0]  # 'dsapi-srfeaccess.digital-servicing-{SHIELD_ENV}-01'
+                    path_and_port = segments[1]  # ':8080/...'
+
+                    # Split host into appname + namespace
+                    host_parts = host.split('.')
+                    if len(host_parts) < 2:
+                        continue  # skip if it doesn’t have appname.namespace structure
+
+                    appname = host_parts[0]
+                    old_namespace = '.'.join(host_parts[1:])
+
+                    if appname in namespaces and namespaces[appname]:
+                        new_namespace = namespaces[appname][0]
+                        new_url = f"{scheme}://{appname}.{new_namespace}.svc.cluster.local{path_and_port}"
+                        logger.info(f"Updating URL for app '{appname}': '{value}' -> '{new_url}'")
+                        d[key] = new_url
 
         recursive_update(data)
 
         with open(yaml_file_path, 'w') as file:
             yaml.safe_dump(data, file)
-        logger.info("YAML file updated successfully (without regex).")
+
+        logger.info("YAML file updated successfully.")
     except Exception as e:
         logger.error(f"Error updating YAML file: {e}")
         raise
