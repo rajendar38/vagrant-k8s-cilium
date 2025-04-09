@@ -1,0 +1,23 @@
+import re
+
+# Regex pattern to extract appnames from URLs with placeholders
+pattern = re.compile(r'http://([a-zA-Z0-9\-]+(?:\.[a-zA-Z0-9\-]+)*)(?:-\{?([A-Za-z0-9_\-]+)\}?-\{?ENV_INDEX\}?)\.svc\.cluster\.local')
+
+# Test URLs
+urls = [
+    "http://dsapi-srfeaccess.digital-servicing-f{SHIELD_ENV}}-{(ENV_INDEX PREFIX}}({ENV_INDEX}}.svc.cluster.local:8080/digital/servicing/feature-access/gr",
+    "http://usb-api-servicing-feature-access.apl-digital-services-{SHIELD_ENV)(ENV_INDEX}.svc.cluster.local:8080/digital/servicing/feature-access/graphq/j"
+]
+
+# Function to test the URLs
+def test_urls(urls):
+    for url in urls:
+        match = re.match(pattern, url)
+        if match:
+            appname = match.group(1)  # Capture appname part from the URL
+            print(f"Match found for URL '{url}': Appname is '{appname}'")
+        else:
+            print(f"No match found for URL '{url}'")
+
+# Run the test
+test_urls(urls)
