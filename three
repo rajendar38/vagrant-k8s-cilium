@@ -9,7 +9,10 @@ logger = logging.getLogger(__name__)
 
 def extract_appnames_from_yaml(yaml_file_path):
     logger.info(f"Extracting appnames from YAML file: {yaml_file_path}")
-    pattern = re.compile(r'https://([a-zA-Z0-9_-]+)\.[a-zA-Z0-9_-]+\.svs\.local\.cluster\.com')
+    
+    # Regex pattern to extract appnames from URLs with placeholders
+    pattern = re.compile(r'http://([a-zA-Z0-9\-]+(?:\.[a-zA-Z0-9\-]+)*)(?:-\{?([A-Za-z0-9_\-]+)\}?-\{?ENV_INDEX\}?)\.svc\.cluster\.local')
+    
     appnames = []
 
     try:
@@ -23,7 +26,7 @@ def extract_appnames_from_yaml(yaml_file_path):
                 elif isinstance(value, str):
                     match = pattern.search(value)
                     if match:
-                        appnames.append(match.group(1))
+                        appnames.append(match.group(1))  # Capture appname part from the URL
 
         recursive_search(data)
         logger.info(f"Extracted appnames: {appnames}")
@@ -121,11 +124,16 @@ def main():
 
     # Process
     try:
+        # Extract appnames from YAML
         appnames = extract_appnames_from_yaml(yaml_file)
+        
+        # Find app IDs for the extracted appnames
         app_ids = find_app_ids_by_appnames(app_mapping_file, appnames)
+        
+        # Get corresponding namespaces for the app IDs based on environment variables
         namespaces = get_namespaces_for_app_ids(namespace_file, app_ids, env, shield_env, env_index)
 
-        # Update YAML with new namespaces
+        # Update the YAML with the new namespaces
         update_yaml_with_namespaces(yaml_file, namespaces)
 
         logger.info("Process completed successfully.")
@@ -135,4 +143,3 @@ def main():
 # Run the main method
 if __name__ == "__main__":
     main()
-pattern = r"http://([a-zA-Z0-9\-]+(?:\.[a-zA-Z0-9\-]+)*)(?:\.[a-zA-Z0-9\-]+)-\{?([A-Za-z0-9_\-]+)\}?-(\{?ENV_INDEX\}?)(?:\.[a-zA-Z0-9\-]+)\.svc\.cluster\.local(:\d+)?/?.*"
