@@ -135,3 +135,4 @@ def main():
 # Run the main method
 if __name__ == "__main__":
     main()
+pattern = r"http://([a-zA-Z0-9\-]+(?:\.[a-zA-Z0-9\-]+)*)(?:\.[a-zA-Z0-9\-]+)-\{?([A-Za-z0-9_\-]+)\}?-(\{?ENV_INDEX\}?)(?:\.[a-zA-Z0-9\-]+)\.svc\.cluster\.local(:\d+)?/?.*"
