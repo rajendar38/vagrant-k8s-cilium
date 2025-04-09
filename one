@@ -1,0 +1,38 @@
+import yaml
+import re
+
+def extract_appnames_from_urls(file_path):
+    # Regex to extract appname from the given URL pattern
+    pattern = re.compile(r'https://([a-zA-Z0-9_-]+)\.[a-zA-Z0-9_-]+\.svs\.local\.cluster\.com/')
+
+    appnames = []
+
+    # Load the YAML file
+    with open(file_path, 'r') as file:
+        data = yaml.safe_load(file)
+
+    # Recursive search to find and process URLs
+    def recursive_search(d):
+        for key, value in d.items():
+            if isinstance(value, dict):
+                recursive_search(value)
+            elif isinstance(value, str):
+                match = pattern.match(value)
+                if match:
+                    appnames.append(match.group(1))  # Extract appname
+
+    recursive_search(data)
+
+    return appnames
+
+# Example usage
+yaml_file_path = "data.yaml"
+appnames = extract_appnames_from_urls(yaml_file_path)
+print("App names:", appnames)
+
+
+
+data:
+  url: https://myapp.dev.svs.local.cluster.com/ajkjk
+  url2: https://anotherapp.prod.svs.local.cluster.com/hello
+  url3: https://notmatching.com
