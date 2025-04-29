@@ -6,12 +6,15 @@ def load_yaml(file_path):
     with open(file_path, 'r') as file:
         return yaml.safe_load(file)
 
-def load_json(file_path):
+def load_json_file(file_path):
     with open(file_path, 'r') as file:
-        content = file.read()
-        # Fix common JSON issues
-        content = content.replace(",\n]", "\n]").replace(",\n}", "\n}")
-        return json.loads(content)
+        try:
+            return json.load(file)
+        except json.JSONDecodeError as e:
+            # Try to fix common JSON issues
+            content = file.read()
+            content = content.replace(",\n]", "\n]").replace(",\n}", "\n}")
+            return json.loads(content)
 
 def get_env_type(namespace):
     """Determine environment from namespace"""
@@ -44,12 +47,12 @@ def convert_to_pattern(namespace, env_type):
     return namespace
 
 def process_data():
-    # 1. Load app structure from test.yaml
+    # 1. Load app structure from test.yaml (JSON format)
     try:
-        test_data = load_json('test.yaml')
+        test_data = load_json_file('test.yaml')
     except Exception as e:
         print(f"Error loading test.yaml: {e}")
-        return None
+        return None, None
 
     # 2. Load all deployment files
     deployment_files = ['prod.yaml', 'it1.yaml', 'uat1.yaml']  # Add others as needed
@@ -81,8 +84,8 @@ def process_data():
         pattern = convert_to_pattern(namespace, env_type)
 
         # Add to all categories that include this app
-        for category, apps in test_data.items():
-            if app_name in apps:
+        for category in test_data:
+            if app_name in test_data[category]:
                 if pattern not in app_pattern_map[app_name][category][env_type]:
                     app_pattern_map[app_name][category][env_type].append(pattern)
 
@@ -92,28 +95,28 @@ def generate_output(test_data, app_pattern_map):
     output = {}
     env_types = ['PROD', 'UAT', 'IT', 'PERF', 'EMP']  # All possible environments
 
-    # For each app in test data
-    for category, apps in test_data.items():
-        for app in apps:
-            if app not in output:
-                output[app] = defaultdict(lambda: defaultdict(list))
-            
-            # For each category the app appears in
-            for cat in test_data:
-                if app in test_data[cat]:
-                    # For each environment type
-                    for env in env_types:
-                        if env in app_pattern_map[app][cat]:
-                            output[app][cat][env] = app_pattern_map[app][cat][env]
-                        else:
-                            output[app][cat][env] = [] if env in ['EMP', 'PERF'] else ["-"]
+    # For each app found in any category
+    all_apps = set()
+    for category in test_data:
+        all_apps.update(test_data[category])
+    
+    for app in all_apps:
+        output[app] = {}
+        for category in test_data:
+            if app in test_data[category]:
+                output[app][category] = {}
+                for env in env_types:
+                    if env in app_pattern_map[app][category]:
+                        output[app][category][env] = app_pattern_map[app][category][env]
+                    else:
+                        output[app][category][env] = [] if env in ['EMP', 'PERF'] else ["-"]
 
     # Write to YAML
     with open('output.yml', 'w') as file:
-        yaml.dump(dict(output), file, default_flow_style=False, sort_keys=False, width=1000)
+        yaml.dump(output, file, default_flow_style=False, sort_keys=False, width=1000)
 
 if __name__ == "__main__":
     test_data, pattern_map = process_data()
     if test_data and pattern_map:
         generate_output(test_data, pattern_map)
-    print("Generated output.yml with namespace patterns")
+    print("Successfully generated output.yml with namespace patterns")
