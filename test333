@@ -4,47 +4,93 @@ from collections import defaultdict
 
 def load_yaml(file_path):
     with open(file_path, 'r') as file:
-        return yaml.safe_load(file)
+        try:
+            content = yaml.safe_load(file)
+            # Handle case where file contains multiple documents
+            if isinstance(content, list):
+                return content
+            return [content] if content else []
+        except yaml.YAMLError as e:
+            print(f"Error loading YAML file {file_path}: {e}")
+            return []
 
 def load_json_file(file_path):
     with open(file_path, 'r') as file:
         try:
-            return json.load(file)
-        except json.JSONDecodeError as e:
-            # Try to fix common JSON issues
             content = file.read()
+            # Fix common JSON issues
             content = content.replace(",\n]", "\n]").replace(",\n}", "\n}")
             return json.loads(content)
+        except json.JSONDecodeError as e:
+            print(f"Error loading JSON file {file_path}: {e}")
+            return {}
 
 def get_env_type(namespace):
     """Determine environment from namespace"""
-    if 'prod' in namespace.lower():
+    if not namespace:
+        return None
+    namespace = namespace.lower()
+    if 'prod' in namespace:
         return 'PROD'
-    elif 'uat' in namespace.lower():
+    elif 'uat' in namespace:
         return 'UAT'
-    elif 'it' in namespace.lower():
+    elif 'it' in namespace:
         return 'IT'
-    elif 'perf' in namespace.lower():
+    elif 'perf' in namespace:
         return 'PERF'
-    elif 'emp' in namespace.lower():
+    elif 'emp' in namespace:
         return 'EMP'
     return None
 
 def convert_to_pattern(namespace, env_type):
     """Convert actual namespace to the required pattern format"""
+    if not namespace or not env_type:
+        return None
+    
+    parts = namespace.split('-')
     if env_type == 'PROD':
-        return namespace.replace('prod', '{SHIELD_ENV}')
+        return '-'.join(parts[:-1] + ['{SHIELD_ENV}'])
     elif env_type == 'IT':
-        if 'acctsve3' in namespace:
-            base = namespace.split('-IT')[0]
+        if 'acctsve3' in namespace.lower():
+            base = '-'.join(parts[:-1])
             return f"{base}-{{SHIELD_ENV}}{{ENV_INDEX}}"
         else:
-            base = '-'.join(namespace.split('-')[:-1])
+            base = '-'.join(parts[:-1])
             return f"{base}e3-{{SHIELD_ENV}}{{ENV_INDEX}}"
     elif env_type in ('UAT', 'PERF', 'EMP'):
-        base = '-'.join(namespace.split('-')[:-1])
+        base = '-'.join(parts[:-1])
         return f"{base}-{{SHIELD_ENV}}{{ENV_INDEX}}"
     return namespace
+
+def process_deployments(deployments):
+    """Process a list of deployments and extract namespace patterns"""
+    app_pattern_map = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+    
+    for deployment in deployments:
+        if not deployment or not isinstance(deployment, dict):
+            continue
+        
+        try:
+            namespace = deployment.get('metadata', {}).get('namespace')
+            env_type = get_env_type(namespace)
+            if not env_type:
+                continue
+            
+            # Get app name from template labels
+            app_name = deployment.get('spec', {}).get('template', {}).get('metadata', {}).get('labels', {}).get('name')
+            if not app_name:
+                continue
+
+            # Convert to pattern
+            pattern = convert_to_pattern(namespace, env_type)
+            if not pattern:
+                continue
+
+            yield app_name, env_type, pattern
+
+        except Exception as e:
+            print(f"Error processing deployment: {e}")
+            continue
 
 def process_data():
     # 1. Load app structure from test.yaml (JSON format)
@@ -56,33 +102,19 @@ def process_data():
 
     # 2. Load all deployment files
     deployment_files = ['prod.yaml', 'it1.yaml', 'uat1.yaml']  # Add others as needed
-    deployments = []
+    all_deployments = []
     for file in deployment_files:
         try:
-            deployments.append(load_yaml(file))
+            deployments = load_yaml(file)
+            if deployments:
+                all_deployments.extend(deployments)
         except Exception as e:
             print(f"Warning: Couldn't load {file}: {e}")
 
     # 3. Build namespace pattern mapping
     app_pattern_map = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
 
-    for deployment in deployments:
-        if not deployment:
-            continue
-        
-        namespace = deployment['metadata']['namespace']
-        env_type = get_env_type(namespace)
-        if not env_type:
-            continue
-        
-        # Get app name from template labels
-        app_name = deployment['spec']['template']['metadata']['labels'].get('name')
-        if not app_name:
-            continue
-
-        # Convert to pattern
-        pattern = convert_to_pattern(namespace, env_type)
-
+    for app_name, env_type, pattern in process_deployments(all_deployments):
         # Add to all categories that include this app
         for category in test_data:
             if app_name in test_data[category]:
@@ -95,7 +127,7 @@ def generate_output(test_data, app_pattern_map):
     output = {}
     env_types = ['PROD', 'UAT', 'IT', 'PERF', 'EMP']  # All possible environments
 
-    # For each app found in any category
+    # Collect all unique apps across all categories
     all_apps = set()
     for category in test_data:
         all_apps.update(test_data[category])
@@ -113,7 +145,7 @@ def generate_output(test_data, app_pattern_map):
 
     # Write to YAML
     with open('output.yml', 'w') as file:
-        yaml.dump(output, file, default_flow_style=False, sort_keys=False, width=1000)
+        yaml.dump(output, file, default_flow_style=False, sort_keys=False, width=1000, allow_unicode=True)
 
 if __name__ == "__main__":
     test_data, pattern_map = process_data()
