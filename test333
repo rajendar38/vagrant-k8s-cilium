@@ -6,10 +6,16 @@ def load_yaml(file_path):
     with open(file_path, 'r') as file:
         try:
             content = yaml.safe_load(file)
-            # Handle case where file contains multiple documents
-            if isinstance(content, list):
+            # Handle case where deployments are under 'items' key
+            if isinstance(content, dict) and 'items' in content:
+                return content['items']
+            # Handle case where file contains multiple documents directly
+            elif isinstance(content, list):
                 return content
-            return [content] if content else []
+            # Handle single deployment case
+            elif isinstance(content, dict):
+                return [content]
+            return []
         except yaml.YAMLError as e:
             print(f"Error loading YAML file {file_path}: {e}")
             return []
@@ -49,6 +55,9 @@ def convert_to_pattern(namespace, env_type):
     
     parts = namespace.split('-')
     if env_type == 'PROD':
+        # Handle both prod and prod2 cases
+        if namespace.endswith('prod2'):
+            return '-'.join(parts[:-1] + ['{SHIELD_ENV}2'])
         return '-'.join(parts[:-1] + ['{SHIELD_ENV}'])
     elif env_type == 'IT':
         if 'acctsve3' in namespace.lower():
@@ -64,13 +73,19 @@ def convert_to_pattern(namespace, env_type):
 
 def process_deployments(deployments):
     """Process a list of deployments and extract namespace patterns"""
-    app_pattern_map = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
-    
     for deployment in deployments:
         if not deployment or not isinstance(deployment, dict):
             continue
         
         try:
+            # Handle both direct deployments and those in 'items' array
+            if 'kind' not in deployment and 'items' in deployment:
+                yield from process_deployments(deployment['items'])
+                continue
+                
+            if deployment.get('kind') != 'Deployment':
+                continue
+                
             namespace = deployment.get('metadata', {}).get('namespace')
             env_type = get_env_type(namespace)
             if not env_type:
