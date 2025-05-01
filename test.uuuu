@@ -2,7 +2,6 @@ import yaml
 import json
 import os
 from collections import defaultdict
-import re
 
 # --- CONFIGURATION ---
 
@@ -38,32 +37,37 @@ def load_all_deployments_from_dir(dir_path):
                     print(f"Error parsing {filename}: {e}")
     return deployments
 
-def get_placeholder_from_namespace(ns):
-    if not ns:
-        return None
-
-    # Extract the environment suffix from the namespace
-    match = re.search(r"(.+)-([a-zA-Z]+)(\d*)$", ns)
-    if not match:
-        return f"{ns}-{{SHIELD_ENV}}"  # fallback
-
-    base, shield_env, index = match.groups()
-
-    if index:
-        return f"{base}-{{SHIELD_ENV}}-{{ENV_INDEX}}"
-    else:
-        return f"{base}-{{SHIELD_ENV}}"
-# --- Match app name in deployments and get namespace ---
-def find_namespace(app_name, deployments):
+# --- Extract app match and namespace ---
+def find_namespace_for_app(app_name, deployments):
     for deploy in deployments:
         try:
-            if deploy.get("kind") == "Deployment":
-                labels = deploy.get("metadata", {}).get("labels", {})
-                if labels.get("name") == app_name:
-                    return get_placeholder_from_namespace(deploy.get("metadata", {}).get("namespace"))
+            meta = deploy.get("metadata", {})
+            labels = meta.get("labels", {})
+            template_labels = (
+                deploy.get("spec", {})
+                      .get("template", {})
+                      .get("metadata", {})
+                      .get("labels", {})
+            )
+            name_label = labels.get("name") or meta.get("name") or template_labels.get("name")
+            if name_label == app_name:
+                return meta.get("namespace")
         except Exception:
             continue
     return None
+
+# --- Transform real namespace to placeholder ---
+def get_placeholder_from_namespace(ns, env):
+    if not ns:
+        return None
+    prefix_parts = ns.split("-")
+    if len(prefix_parts) < 2:
+        return f"{ns}-{{SHIELD_ENV}}" if env == "PROD" else f"{ns}-{{SHIELD_ENV}}-{{ENV_INDEX}}"
+    base = "-".join(prefix_parts[:-1])
+    if env == "PROD":
+        return f"{base}-{{SHIELD_ENV}}"
+    else:
+        return f"{base}-{{SHIELD_ENV}}-{{ENV_INDEX}}"
 
 # --- Load all deployments per environment ---
 env_to_deployments = {
@@ -71,22 +75,33 @@ env_to_deployments = {
     for env, dir_path in env_dirs.items()
 }
 
+# --- Build full set of unique apps ---
+all_apps = set()
+for apps in app_categories.values():
+    all_apps.update(apps)
+
+# --- Ensure all categories are present ---
+all_categories = {"customer", "banker", "branch"}
+
 # --- Build final output structure ---
 final_output = defaultdict(dict)
 
-for category, apps in app_categories.items():
-    for app in apps:
-        if category not in final_output[app]:
-            final_output[app][category] = {}
+for app in all_apps:
+    for category in all_categories:
+        envs = {}
 
-        # Dynamic environments
         for env, deployments in env_to_deployments.items():
-            ns = find_namespace(app, deployments)
-            final_output[app][category][env] = [ns] if ns else []
+            namespace = find_namespace_for_app(app, deployments)
+            if namespace:
+                placeholder = get_placeholder_from_namespace(namespace, env)
+                envs[env] = [placeholder]
+            else:
+                envs[env] = []
 
-        # Static empty environments
         for env in empty_envs:
-            final_output[app][category][env] = []
+            envs[env] = []
+
+        final_output[app][category] = envs
 
 # --- Save final output ---
 with open(output_path, "w") as f:
