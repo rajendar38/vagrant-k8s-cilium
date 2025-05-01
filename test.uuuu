@@ -1,0 +1,95 @@
+import yaml
+import json
+import os
+from collections import defaultdict
+import re
+
+# --- CONFIGURATION ---
+
+app_input_path = "input.json"  # JSON file with app categories
+env_dirs = {
+    "PROD": "deployments/prod",
+    "UAT": "deployments/uat"
+}
+empty_envs = ["EMP", "PERF" ,"IT"]
+output_path = "final_output.yaml"
+
+# --- Load apps by category ---
+with open(app_input_path, "r") as f:
+    app_categories = json.load(f)
+
+# --- Load all YAML deployments from a directory ---
+def load_all_deployments_from_dir(dir_path):
+    deployments = []
+    if not os.path.exists(dir_path):
+        return deployments
+
+    for filename in os.listdir(dir_path):
+        if filename.endswith(".yaml") or filename.endswith(".yml"):
+            full_path = os.path.join(dir_path, filename)
+            with open(full_path, "r") as f:
+                try:
+                    content = yaml.safe_load(f)
+                    if isinstance(content, dict) and "items" in content:
+                        deployments.extend(content["items"])
+                    else:
+                        deployments.extend(yaml.safe_load_all(f))
+                except Exception as e:
+                    print(f"Error parsing {filename}: {e}")
+    return deployments
+
+def get_placeholder_from_namespace(ns):
+    if not ns:
+        return None
+
+    # Extract the environment suffix from the namespace
+    match = re.search(r"(.+)-([a-zA-Z]+)(\d*)$", ns)
+    if not match:
+        return f"{ns}-{{SHIELD_ENV}}"  # fallback
+
+    base, shield_env, index = match.groups()
+
+    if index:
+        return f"{base}-{{SHIELD_ENV}}-{{ENV_INDEX}}"
+    else:
+        return f"{base}-{{SHIELD_ENV}}"
+# --- Match app name in deployments and get namespace ---
+def find_namespace(app_name, deployments):
+    for deploy in deployments:
+        try:
+            if deploy.get("kind") == "Deployment":
+                labels = deploy.get("metadata", {}).get("labels", {})
+                if labels.get("name") == app_name:
+                    return get_placeholder_from_namespace(deploy.get("metadata", {}).get("namespace"))
+        except Exception:
+            continue
+    return None
+
+# --- Load all deployments per environment ---
+env_to_deployments = {
+    env: load_all_deployments_from_dir(dir_path)
+    for env, dir_path in env_dirs.items()
+}
+
+# --- Build final output structure ---
+final_output = defaultdict(dict)
+
+for category, apps in app_categories.items():
+    for app in apps:
+        if category not in final_output[app]:
+            final_output[app][category] = {}
+
+        # Dynamic environments
+        for env, deployments in env_to_deployments.items():
+            ns = find_namespace(app, deployments)
+            final_output[app][category][env] = [ns] if ns else []
+
+        # Static empty environments
+        for env in empty_envs:
+            final_output[app][category][env] = []
+
+# --- Save final output ---
+with open(output_path, "w") as f:
+    yaml.dump(dict(final_output), f, sort_keys=False)
+
+print(f"✅ Final structured YAML written to: {output_path}")
