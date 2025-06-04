@@ -69,8 +69,12 @@ def update_yaml_with_new_urls(yaml_path, json_path, env):
     with open(yaml_path, 'r') as yf:
         yaml_content = yaml.safe_load(yf)
 
-    with open(json_path, 'r') as jf:
-        json_content = json.load(jf)
+    try:
+        with open(json_path, 'r') as jf:
+            json_content = json.load(jf)
+    except FileNotFoundError:
+        logging.error(f"JSON file not found: {json_path}")
+        raise
 
     new_urls = generate_updated_urls(yaml_content, json_content, env)
 
