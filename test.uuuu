@@ -1,110 +1,97 @@
 import yaml
 import json
-import os
-from collections import defaultdict
+import logging
 
-# --- CONFIGURATION ---
+# Setup basic logger
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-app_input_path = "input.json"  # JSON file with app categories
-env_dirs = {
-    "PROD": "deployments/prod",
-    "UAT": "deployments/uat"
-}
-empty_envs = ["EMP", "PERF" ,"IT"]
-output_path = "final_output.yaml"
-
-# --- Load apps by category ---
-with open(app_input_path, "r") as f:
-    app_categories = json.load(f)
-
-# --- Load all YAML deployments from a directory ---
-def load_all_deployments_from_dir(dir_path):
-    deployments = []
-    if not os.path.exists(dir_path):
-        return deployments
-
-    for filename in os.listdir(dir_path):
-        if filename.endswith(".yaml") or filename.endswith(".yml"):
-            full_path = os.path.join(dir_path, filename)
-            with open(full_path, "r") as f:
-                try:
-                    content = yaml.safe_load(f)
-                    if isinstance(content, dict) and "items" in content:
-                        deployments.extend(content["items"])
-                    else:
-                        deployments.extend(yaml.safe_load_all(f))
-                except Exception as e:
-                    print(f"Error parsing {filename}: {e}")
-    return deployments
-
-# --- Extract app match and namespace ---
-def find_namespace_for_app(app_name, deployments):
-    for deploy in deployments:
-        try:
-            meta = deploy.get("metadata", {})
-            labels = meta.get("labels", {})
-            template_labels = (
-                deploy.get("spec", {})
-                      .get("template", {})
-                      .get("metadata", {})
-                      .get("labels", {})
-            )
-            name_label = labels.get("name") or meta.get("name") or template_labels.get("name")
-            if name_label == app_name:
-                return meta.get("namespace")
-        except Exception:
-            continue
-    return None
-
-# --- Transform real namespace to placeholder ---
-def get_placeholder_from_namespace(ns, env):
-    if not ns:
+def get_namespace(json_data, identifier, env):
+    """Retrieves the namespace from json_data based on identifier and environment."""
+    service_data = json_data.get(identifier)
+    if not service_data:
+        logging.warning(f"No metadata found for identifier '{identifier}'")
         return None
-    prefix_parts = ns.split("-")
-    if len(prefix_parts) < 2:
-        return f"{ns}-{{SHIELD_ENV}}" if env == "PROD" else f"{ns}-{{SHIELD_ENV}}-{{ENV_INDEX}}"
-    base = "-".join(prefix_parts[:-1])
-    if env == "PROD":
-        return f"{base}-{{SHIELD_ENV}}"
-    else:
-        return f"{base}-{{SHIELD_ENV}}-{{ENV_INDEX}}"
 
-# --- Load all deployments per environment ---
-env_to_deployments = {
-    env: load_all_deployments_from_dir(dir_path)
-    for env, dir_path in env_dirs.items()
-}
+    namespace_key = f"{env.upper()}_NAMESPACE"
+    namespace = service_data.get(namespace_key)
+    if not namespace:
+        logging.warning(f"No namespace found for identifier '{identifier}' in environment '{env}'")
+        return None
 
-# --- Build full set of unique apps ---
-all_apps = set()
-for apps in app_categories.values():
-    all_apps.update(apps)
+    return namespace
 
-# --- Ensure all categories are present ---
-all_categories = {"customer", "banker", "branch"}
+def generate_updated_urls(yaml_data, json_data, env):
+    """Generates updated URLs using input.yaml and input1.json data, updating existing keys with original endpoint paths."""
+    data = yaml_data.get('data', {})
+    updated_entries = {}
 
-# --- Build final output structure ---
-final_output = defaultdict(dict)
+    for key, url in data.items():
+        if 'svc.cluster.local' not in url:
+            logging.debug(f"Skipping key '{key}' (no svc.cluster.local in URL)")
+            continue
 
-for app in all_apps:
-    for category in all_categories:
-        envs = {}
+        # Extract identifier from subdomain
+        try:
+            subdomain = url.split('.')[0]
+            identifier = subdomain.split('-')[1]
+        except IndexError:
+            logging.warning(f"Could not extract identifier from URL: {url}")
+            continue
 
-        for env, deployments in env_to_deployments.items():
-            namespace = find_namespace_for_app(app, deployments)
-            if namespace:
-                placeholder = get_placeholder_from_namespace(namespace, env)
-                envs[env] = [placeholder]
-            else:
-                envs[env] = []
+        service_data = json_data.get(identifier)
+        if not service_data:
+            logging.warning(f"No metadata found for identifier '{identifier}'")
+            continue
 
-        for env in empty_envs:
-            envs[env] = []
+        project_name = service_data.get("DEVOPS_GIT_PROJECT_NAME")
+        namespace = get_namespace(json_data, identifier, env)
 
-        final_output[app][category] = envs
+        if not all([project_name, namespace]):
+            logging.warning(f"Incomplete data for identifier '{identifier}'")
+            continue
 
-# --- Save final output ---
-with open(output_path, "w") as f:
-    yaml.dump(dict(final_output), f, sort_keys=False)
+        # Extract the full path (including endpoint-specific parts) from the original URL
+        url_parts = url.split(':8080')
+        if len(url_parts) < 2:
+            logging.warning(f"Could not extract path from URL: {url}")
+            continue
+        full_path = url_parts[1]  # e.g., /digital/servicing/customer-email-provider/v1/confirmStatus
 
-print(f"✅ Final structured YAML written to: {output_path}")
+        # Build new URL using the original full path
+        new_url = f"http://{project_name}.{namespace}.svc.cluster.local:8080{full_path}"
+        updated_entries[key] = new_url  # Update the existing key with the new URL
+        logging.info(f"Updated URL for {key}: {new_url}")
+
+    return updated_entries
+
+def update_yaml_with_new_urls(yaml_path, json_path, env):
+    """Loads YAML & JSON, updates YAML data with new URLs, and writes back to file."""
+    with open(yaml_path, 'r') as yf:
+        yaml_content = yaml.safe_load(yf)
+
+    with open(json_path, 'r') as jf:
+        json_content = json.load(jf)
+
+    new_urls = generate_updated_urls(yaml_content, json_content, env)
+
+    if 'data' not in yaml_content:
+        yaml_content['data'] = {}
+
+    yaml_content['data'].update(new_urls)
+
+    with open(yaml_path, 'w') as yf:
+        yaml.dump(yaml_content, yf, default_flow_style=False)
+
+    logging.info(f"Updated YAML file: {yaml_path}")
+
+def main():
+    yaml_file = 'input.yaml'
+    json_file = 'input1.json'
+    env = 'IT'  # You can change this to UAT, PROD, etc.
+
+    logging.info("Starting URL generation and YAML update process...")
+    update_yaml_with_new_urls(yaml_file, json_file, env)
+    logging.info("Process completed successfully.")
+
+if __name__ == "__main__":
+    main()
