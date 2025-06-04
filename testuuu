@@ -1,9 +1,45 @@
 import yaml
 import json
 import logging
+import os
 
 # Setup basic logger
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+
+def get_capability():
+    """Mock function to simulate capability check (replace with actual os.getcapability implementation)."""
+    # In a real scenario, replace this with your actual capability check
+    # For demonstration, I'll use an environment variable or default to 'consumer'
+    capability = os.getenv("CAPABILITY", "consumer").lower()
+    valid_capabilities = ["consumer", "banker", "branch"]
+    if capability not in valid_capabilities:
+        logging.warning(f"Invalid capability '{capability}', defaulting to 'consumer'")
+        capability = "consumer"
+    return capability
+
+def get_json_file_path(capability):
+    """Returns the appropriate JSON file path based on the capability."""
+    json_files = {
+        "consumer": "input1_consumer.json",
+        "banker": "input1_banker.json",
+        "branch": "input1_branch.json"
+    }
+    return json_files.get(capability, "input1.json")
+
+def get_namespace(json_data, identifier, env):
+    """Retrieves the namespace from json_data based on identifier and environment."""
+    service_data = json_data.get(identifier)
+    if not service_data:
+        logging.warning(f"No metadata found for identifier '{identifier}'")
+        return None
+
+    namespace_key = f"{env.upper()}_NAMESPACE"
+    namespace = service_data.get(namespace_key)
+    if not namespace:
+        logging.warning(f"No namespace found for identifier '{identifier}' in environment '{env}'")
+        return None
+
+    return namespace
 
 def generate_updated_urls(yaml_data, json_data, env):
     """Generates updated URLs using input.yaml and input1.json data, updating existing keys with original endpoint paths."""
@@ -29,8 +65,7 @@ def generate_updated_urls(yaml_data, json_data, env):
             continue
 
         project_name = service_data.get("DEVOPS_GIT_PROJECT_NAME")
-        namespace_key = f"{env.upper()}_NAMESPACE"
-        namespace = service_data.get(namespace_key)
+        namespace = get_namespace(json_data, identifier, env)
 
         if not all([project_name, namespace]):
             logging.warning(f"Incomplete data for identifier '{identifier}'")
@@ -50,13 +85,22 @@ def generate_updated_urls(yaml_data, json_data, env):
 
     return updated_entries
 
-def update_yaml_with_new_urls(yaml_path, json_path, env):
+def update_yaml_with_new_urls(yaml_path, env):
     """Loads YAML & JSON, updates YAML data with new URLs, and writes back to file."""
     with open(yaml_path, 'r') as yf:
         yaml_content = yaml.safe_load(yf)
 
-    with open(json_path, 'r') as jf:
-        json_content = json.load(jf)
+    # Determine the JSON file based on capability
+    capability = get_capability()
+    json_path = get_json_file_path(capability)
+    logging.info(f"Using JSON file for capability '{capability}': {json_path}")
+
+    try:
+        with open(json_path, 'r') as jf:
+            json_content = json.load(jf)
+    except FileNotFoundError:
+        logging.error(f"JSON file not found: {json_path}")
+        raise
 
     new_urls = generate_updated_urls(yaml_content, json_content, env)
 
@@ -72,11 +116,10 @@ def update_yaml_with_new_urls(yaml_path, json_path, env):
 
 def main():
     yaml_file = 'input.yaml'
-    json_file = 'input1.json'
     env = 'IT'  # You can change this to UAT, PROD, etc.
 
     logging.info("Starting URL generation and YAML update process...")
-    update_yaml_with_new_urls(yaml_file, json_file, env)
+    update_yaml_with_new_urls(yaml_file, env)
     logging.info("Process completed successfully.")
 
 if __name__ == "__main__":
